@@ -61,6 +61,7 @@ public class HBaseClient extends com.yahoo.ycsb.DB {
   public String table = "";
   public HTable hTable = null;
   public String columnFamily = "";
+  public String consistency = "";
   public byte columnFamilyBytes[];
 
   public static final int Ok = 0;
@@ -76,12 +77,20 @@ public class HBaseClient extends com.yahoo.ycsb.DB {
       debug = true;
     }
 
+	// Get columnFamily
     columnFamily = getProperties().getProperty("columnfamily");
     if (columnFamily == null) {
       System.err.println("Error, must specify a columnfamily for HBase table");
       throw new DBException("No columnfamily specified");
     }
     columnFamilyBytes = Bytes.toBytes(columnFamily);
+    
+    // Get consistency
+    consistency = getProperties().getProperty("consistency");
+    if (consistency == null) {
+        System.err.println("Error, must specify a consistency type for HBase table");
+        throw new DBException("No consistency specified");
+      }
   }
 
   /**
@@ -116,9 +125,17 @@ public class HBaseClient extends com.yahoo.ycsb.DB {
       if (hTable == null) {
         hTable = new HTable(config, table);
         //2 suggestions from http://ryantwopointoh.blogspot.com/2009/01/performance-of-hbase-importing.html
-        hTable.setAutoFlush(false);
-        hTable.setWriteBufferSize(1024 * 1024 * 12);
-        //return hTable;
+        
+        if (consistency == "weak"){
+        	//**************** weak eventual consistency (default): flush @buffer size ****//
+            hTable.setAutoFlush(false);
+            // 12 MB size
+            hTable.setWriteBufferSize(1024*1024*64);
+        }
+        else{
+        	//**************** strong eventual consistency: flushed at each step **********//
+        	hTable.setAutoFlush(true);
+        }
       }
     }
 
@@ -431,8 +448,8 @@ public class HBaseClient extends com.yahoo.ycsb.DB {
   }
 
   public static void main(String[] args) throws InterruptedException, ExecutionException {
-    if (args.length != 3) {
-      System.out.println("Please specify a threadcount, columnfamily and operation count");
+    if (args.length != 4) {
+      System.out.println("Please specify a threadcount, columnfamily, operation count and consistency");
       System.exit(0);
     }
 
@@ -441,13 +458,12 @@ public class HBaseClient extends com.yahoo.ycsb.DB {
     final int threadcount = Integer.parseInt(args[0]);
 
     final String columnfamily = args[1];
-
-
     final int opcount = Integer.parseInt(args[2]) / threadcount;
+    final String consistency = args[3];
 
     List<Callable<Integer>> tasks = Lists.newArrayList();
     for (int i = 0; i < threadcount; i++) {
-      tasks.add(new LoadGenerator(opcount, keyspace, columnfamily));
+      tasks.add(new LoadGenerator(opcount, keyspace, columnfamily, consistency));
     }
     ExecutorService es = Executors.newCachedThreadPool();
 
@@ -467,11 +483,13 @@ public class HBaseClient extends com.yahoo.ycsb.DB {
     private int opCount;
     private int keySpace;
     private String columnFamily;
+    private String consistency;
 
-    public LoadGenerator(int opCount, int keySpace, String columnFamily) {
+    public LoadGenerator(int opCount, int keySpace, String columnFamily, String consistency) {
       this.opCount = opCount;
       this.keySpace = keySpace;
       this.columnFamily = columnFamily;
+      this.consistency = consistency;
     }
 
     @Override
@@ -482,6 +500,7 @@ public class HBaseClient extends com.yahoo.ycsb.DB {
 
       Properties props = new Properties();
       props.setProperty("columnfamily", columnFamily);
+      props.setProperty("consistency", consistency);
       props.setProperty("debug", "true");
       cli.setProperties(props);
 
