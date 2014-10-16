@@ -9,3 +9,5 @@ readallfields=false
 insertproportion=1.00
 
 requestdistribution=uniform
+
+columnfamily=c0
