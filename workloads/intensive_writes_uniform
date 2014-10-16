@@ -21,3 +21,5 @@ requestdistribution=uniform
 
 maxexecutiontime=600
 consistency=weak
+
+columnfamily=c0
