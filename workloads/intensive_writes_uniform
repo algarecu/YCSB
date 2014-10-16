@@ -1,0 +1,23 @@
+# Yahoo! Cloud System Benchmark
+# Workload A: Write heavy workload
+#   Application example: Session store recording recent actions
+#                        
+#   Read/update ratio: 20/80
+#   Default data size: 64 KB records (9 fields, 6400 bytes each, plus key)
+#   Request distribution: uniform
+
+workload=com.yahoo.ycsb.workloads.CoreWorkload
+
+recordcount=100000000
+operationcount=100000000
+
+fieldcount=9
+fieldlength=6400
+
+readproportion=0.20
+updateproportion=0.80
+
+requestdistribution=uniform
+
+maxexecutiontime=600
+consistency=weak

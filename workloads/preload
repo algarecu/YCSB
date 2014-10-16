@@ -1,0 +1,11 @@
+workload=com.yahoo.ycsb.workloads.CoreWorkload
+
+recordcount=100000000
+
+fieldcount=9
+fieldlength=100
+
+readallfields=false
+insertproportion=1.00
+
+requestdistribution=uniform
